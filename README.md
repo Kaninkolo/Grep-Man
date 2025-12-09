@@ -78,6 +78,8 @@ gman grep pattern -c
 gman tar extract
 ```
 
+![example.png](example.png)
+
 ### Interactive Navigation
 
 Once the search results appear:
