@@ -1,0 +1,63 @@
+#compdef gman
+
+_gman() {
+    local curcontext="$curcontext" state line
+    typeset -A opt_args
+
+    _arguments -C \
+        '(-c --case-sensitive)'{-c,--case-sensitive}'[Case sensitive search]' \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(-V --version)'{-V,--version}'[Show version]' \
+        '1: :->program' \
+        '2: :->term' \
+        && return 0
+
+    case $state in
+        program)
+            # Complete with available man pages
+            _gman_programs
+            ;;
+        term)
+            # If a program was specified, suggest flags from its man page
+            if [[ -n "$line[1]" ]]; then
+                _gman_flags_from_man "$line[1]"
+            fi
+            ;;
+    esac
+}
+
+_gman_programs() {
+    local -a programs
+
+    # Get list of available man pages (section 1 and 8 - user commands and system admin)
+    if (( $+commands[apropos] )); then
+        programs=(${(f)"$(apropos -s 1,8 . 2>/dev/null | cut -d' ' -f1 | cut -d'(' -f1)"})
+    fi
+
+    # Fallback to commands in PATH if apropos didn't work
+    if [[ ${#programs} -eq 0 ]]; then
+        programs=(${(k)commands})
+    fi
+
+    _describe 'man pages' programs
+}
+
+_gman_flags_from_man() {
+    local program=$1
+    local -a flags
+
+    # Extract flags from the man page
+    if (( $+commands[man] )); then
+        flags=(${(f)"$(man -P cat "$program" 2>/dev/null |
+            grep -oE '^\s*(--?[a-zA-Z0-9][-a-zA-Z0-9_]*)' |
+            tr -d ' ' |
+            sort -u |
+            head -n 50)"})
+
+        if [[ ${#flags} -gt 0 ]]; then
+            _describe "flags from $program man page" flags
+        fi
+    fi
+}
+
+_gman "$@"

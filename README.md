@@ -1,6 +1,7 @@
 # gman
 
-A CLI tool for searching man pages and jumping directly to specific lines. Built with Rust and ratatui.
+A CLI tool for searching man pages and jumping directly to specific lines. Built
+with Rust and ratatui.
 
 ## Features
 
@@ -9,7 +10,7 @@ A CLI tool for searching man pages and jumping directly to specific lines. Built
 - Jump directly to the selected line in the man page
 - Context display (shows line before match)
 - Case-sensitive and case-insensitive search
-- Bash completion for program names and flags
+- Bash/Zsh completion for program names and flags
 - Vim-style navigation (j/k for up/down)
 
 ## Installation
@@ -28,7 +29,9 @@ The binary will be at `target/release/gman`.
 cargo install --path .
 ```
 
-### Enable bash completion
+### Enable shell completion
+
+#### Bash
 
 ```bash
 # Copy the completion script
@@ -37,6 +40,23 @@ sudo cp gman-completion.bash /etc/bash_completion.d/gman
 # Or source it in your ~/.bashrc
 echo 'source /path/to/gman/gman-completion.bash' >> ~/.bashrc
 source ~/.bashrc
+```
+
+#### Zsh
+
+```bash
+# Create completions directory if it doesn't exist
+mkdir -p ~/.zsh/completions
+
+# Copy the Zsh completion script
+cp _gman ~/.zsh/completions/
+
+# Add to your ~/.zshrc (if not already present)
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+
+# Reload your shell
+source ~/.zshrc
 ```
 
 ## Usage
@@ -61,13 +81,15 @@ gman tar extract
 ### Interactive Navigation
 
 Once the search results appear:
+
 - Use arrow keys or `j`/`k` to navigate
 - Press `Enter` to jump to the selected line in the man page
 - Press `q` or `Esc` to quit without jumping
 
 ### Options
 
-- `-c, --case-sensitive` - Enable case-sensitive search (default: case-insensitive)
+- `-c, --case-sensitive` - Enable case-sensitive search (default:
+  case-insensitive)
 - `-h, --help` - Show help information
 - `-V, --version` - Show version
 
@@ -82,11 +104,13 @@ Once the search results appear:
 ## Bash Completion
 
 The completion script provides:
+
 - Program name completion (completes from available man pages)
 - Flag completion from the target program's man page
 - gman's own flags completion
 
 Example workflow:
+
 ```bash
 gman <TAB>          # Shows available programs
 gman ls <TAB>       # Shows flags from ls man page
@@ -101,4 +125,4 @@ gman ls -a<TAB>     # Completes flags starting with -a
 
 ## License
 
-
+MIT
