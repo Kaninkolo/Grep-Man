@@ -62,12 +62,15 @@ source ~/.zshrc
 ## Usage
 
 ```bash
-gman <program> <search-term> [OPTIONS]
+gman <program> [search-term] [OPTIONS]
 ```
 
 ### Examples
 
 ```bash
+# Open man page directly (no search)
+gman ls
+
 # Search for "recursive" in ls man page
 gman ls recursive
 
@@ -92,10 +95,15 @@ Once the search results appear:
 
 - `-c, --case-sensitive` - Enable case-sensitive search (default:
   case-insensitive)
-- `-h, --help` - Show help information
-- `-V, --version` - Show version
+- `--help` - Show help information
+- `--version` - Show version information
+
+**Note:** Short flags `-h` and `-V` are not used for help/version, so you can
+search for them in man pages (e.g., `gman git -h` searches for `-h` flag).
 
 ## How It Works
+
+When a search term is provided:
 
 1. Extracts the man page text using `man -P cat`
 2. Strips control characters used for formatting
@@ -103,26 +111,31 @@ Once the search results appear:
 4. Displays an interactive TUI for selection
 5. Opens the man page at the selected line using `less +<line>G`
 
-## Bash Completion
+When no search term is provided:
 
-The completion script provides:
+- Opens the man page directly
+
+## Shell Completion
+
+The completion scripts provide:
 
 - Program name completion (completes from available man pages)
-- Flag completion from the target program's man page
-- gman's own flags completion
+- Flag/parameter suggestions from the target program's man page
+- Flag completion for gman's own flags (`-c`, `--case-sensitive`, etc.)
 
 Example workflow:
 
 ```bash
-gman <TAB>          # Shows available programs
-gman ls <TAB>       # Shows flags from ls man page
-gman ls -a<TAB>     # Completes flags starting with -a
+gman <TAB>          # Shows available programs (ls, grep, tar, etc.)
+gman ls <TAB>       # Shows flags from ls man page (-a, -l, --all, etc.)
+gman ls -a<TAB>     # Filters to flags starting with -a
+gman --c<TAB>       # Completes gman's own flag to --case-sensitive
 ```
 
 ## Requirements
 
 - Rust 1.70 or later
-- `man` command (standard on Unix-like systems)
+- `man` command (standard on Unix-like systems, except Arch)
 - `less` pager (standard on Unix-like systems)
 
 ## License

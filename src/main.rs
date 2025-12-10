@@ -19,16 +19,27 @@ use std::process::{Command, Stdio};
 #[derive(Parser, Debug)]
 #[command(name = "gman")]
 #[command(about = "Search man pages and jump to specific lines", long_about = None)]
+#[command(disable_help_flag = true)]
+#[command(disable_version_flag = true)]
 struct Args {
-    /// Program to search the man page for
-    program: String,
+    /// Show help information
+    #[arg(long, action = clap::ArgAction::Help)]
+    help: Option<bool>,
 
-    /// Search term to find in the man page
-    term: String,
+    /// Show version information
+    #[arg(long, action = clap::ArgAction::Version)]
+    version: Option<bool>,
 
     /// Case sensitive search
     #[arg(short, long)]
     case_sensitive: bool,
+
+    /// Program to search the man page for
+    program: String,
+
+    /// Search term to find in the man page (if omitted, opens the man page directly)
+    #[arg(allow_hyphen_values = true)]
+    term: Option<String>,
 }
 
 #[derive(Clone)]
@@ -41,19 +52,27 @@ struct Match {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
+    // If no search term provided, just open the man page
+    if args.term.is_none() {
+        open_man_page(&args.program)?;
+        return Ok(());
+    }
+
+    let term = args.term.unwrap();
+
     // Extract man page text
     let man_text = extract_man_page(&args.program)?;
 
     // Search for matches
-    let matches = search_man_page(&man_text, &args.term, args.case_sensitive);
+    let matches = search_man_page(&man_text, &term, args.case_sensitive);
 
     if matches.is_empty() {
-        println!("No matches found for '{}' in man page for '{}'", args.term, args.program);
+        println!("No matches found for '{}' in man page for '{}'", term, args.program);
         return Ok(());
     }
 
     // Show interactive selection menu
-    let selected = show_selection_menu(&matches, &args.program, &args.term)?;
+    let selected = show_selection_menu(&matches, &args.program, &term)?;
 
     // Jump to selected line in man page
     if let Some(match_item) = selected {
@@ -263,6 +282,18 @@ fn show_selection_menu(
     stdout().execute(LeaveAlternateScreen)?;
 
     Ok(result)
+}
+
+fn open_man_page(program: &str) -> Result<(), Box<dyn std::error::Error>> {
+    Command::new("man")
+        .arg(program)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()?
+        .wait()?;
+
+    Ok(())
 }
 
 fn jump_to_line(program: &str, line_number: usize) -> Result<(), Box<dyn std::error::Error>> {

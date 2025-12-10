@@ -9,14 +9,9 @@ _gman_completions() {
     # Available flags
     local flags="-c --case-sensitive -h --help -V --version"
 
-    # If current word starts with -, complete flags
-    if [[ ${cur} == -* ]]; then
-        COMPREPLY=($(compgen -W "${flags}" -- "${cur}"))
-        return 0
-    fi
-
     # Determine which positional argument we're completing
     local positional_count=0
+    local program=""
     local i
     for ((i = 1; i < cword; i++)); do
         case "${words[i]}" in
@@ -28,6 +23,9 @@ _gman_completions() {
                 ;;
             *)
                 # Positional argument
+                if [[ $positional_count -eq 0 ]]; then
+                    program="${words[i]}"
+                fi
                 ((positional_count++))
                 ;;
         esac
@@ -36,20 +34,30 @@ _gman_completions() {
     case $positional_count in
         0)
             # First positional argument: program name
-            # Complete with available man pages
-            _gman_complete_programs
+            # If starts with -, complete gman flags
+            if [[ ${cur} == -* ]]; then
+                COMPREPLY=($(compgen -W "${flags}" -- "${cur}"))
+            else
+                # Complete with available man pages
+                _gman_complete_programs
+            fi
             ;;
         1)
             # Second positional argument: search term
-            # If a program was specified, try to extract flags from its man page
-            local program="${words[1]}"
+            # Prioritize flags from the target program's man page
             if [[ -n "$program" && "$program" != -* ]]; then
                 _gman_complete_flags_from_man "$program"
             fi
+            # If no completions from man page, fall back to gman flags
+            if [[ ${#COMPREPLY[@]} -eq 0 && ${cur} == -* ]]; then
+                COMPREPLY=($(compgen -W "${flags}" -- "${cur}"))
+            fi
             ;;
         *)
-            # No completion for additional arguments
-            return 0
+            # Additional arguments: only complete gman flags
+            if [[ ${cur} == -* ]]; then
+                COMPREPLY=($(compgen -W "${flags}" -- "${cur}"))
+            fi
             ;;
     esac
 }
@@ -76,19 +84,35 @@ _gman_complete_programs() {
 _gman_complete_flags_from_man() {
     local program="$1"
 
-    # Try to extract flags from the man page for the given program
-    # This is a heuristic approach - looks for lines starting with - or --
+    # Extract flags and subcommands from the man page
     if command -v man &>/dev/null; then
-        local flags=$(man -P cat "$program" 2>/dev/null |
-            grep -oE '^\s*(--?[a-zA-Z0-9][-a-zA-Z0-9_]*)' |
-            tr -d ' ' |
-            sort -u |
-            head -n 50)
+        local manpage=$(man -P cat "$program" 2>/dev/null)
+        local items=""
 
-        if [[ -n "$flags" ]]; then
-            COMPREPLY=($(compgen -W "${flags}" -- "${cur}"))
+        # Extract flags (starting with - or --)
+        local flags=$(echo "$manpage" |
+            grep -oE '(^|[[:space:],])(--?[a-zA-Z0-9][-a-zA-Z0-9_]*)' |
+            sed 's/^[[:space:],]*//' |
+            grep -E '^--?[a-zA-Z]' |
+            sort -u)
+
+        items="$flags"
+
+        # Extract subcommands (e.g., git-add, git-commit)
+        # Look for patterns like "program-subcommand"
+        local subcommands=$(echo "$manpage" |
+            grep -oE "${program}-[a-z][a-z0-9-]+" |
+            sed "s/^${program}-//" |
+            sort -u)
+
+        items="$items $subcommands"
+
+        if [[ -n "$items" ]]; then
+            COMPREPLY=($(compgen -W "${items}" -- "${cur}"))
+            return 0
         fi
     fi
+    return 1
 }
 
 # Register the completion function
