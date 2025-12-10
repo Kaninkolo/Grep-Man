@@ -75,10 +75,15 @@ gman ls
 gman ls recursive
 
 # Case-sensitive search
-gman -c grep pattern 
+gman -c grep pattern
 
-# Search for flags
-gman tar extract
+# Regex pattern matching
+gman -r git "^[[:space:]]*-[a-z]$"      # Single-letter flags
+gman -r ls "--\w+"                       # Long flags starting with --
+gman -r grep "PATTERN|REGEX"             # Multiple terms
+
+# Combine flags
+gman -cr git "^--[A-Z]"                  # Case-sensitive regex
 ```
 
 ![example.png](example.png)
@@ -95,6 +100,8 @@ Once the search results appear:
 
 - `-c, --case-sensitive` - Enable case-sensitive search (must be specified
   before the program name)
+- `-r, --regex` - Use regex pattern matching (must be specified before the
+  program name)
 - `-h, --help` - Show help information (only works without a program name)
 - `-V, --version` - Show version information (only works without a program name)
 

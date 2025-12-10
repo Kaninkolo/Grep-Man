@@ -26,6 +26,10 @@ struct Args {
     #[arg(short, long, global = false)]
     case_sensitive: bool,
 
+    /// Use regex pattern matching (must be specified before the program name)
+    #[arg(short, long, global = false)]
+    regex: bool,
+
     /// Program to search the man page for
     program: String,
 
@@ -67,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let man_text = extract_man_page(&args.program)?;
 
     // Search for matches
-    let matches = search_man_page(&man_text, &term, args.case_sensitive);
+    let matches = search_man_page(&man_text, &term, args.case_sensitive, args.regex)?;
 
     if matches.is_empty() {
         println!("No matches found for '{}' in man page for '{}'", term, args.program);
@@ -116,39 +120,73 @@ fn strip_control_chars(text: &str) -> String {
         .collect()
 }
 
-fn search_man_page(text: &str, term: &str, case_sensitive: bool) -> Vec<Match> {
+fn search_man_page(
+    text: &str,
+    term: &str,
+    case_sensitive: bool,
+    use_regex: bool,
+) -> Result<Vec<Match>, Box<dyn std::error::Error>> {
     let lines: Vec<&str> = text.lines().collect();
     let mut matches = Vec::new();
 
-    let search_term = if case_sensitive {
-        term.to_string()
-    } else {
-        term.to_lowercase()
-    };
-
-    for (i, line) in lines.iter().enumerate() {
-        let search_line = if case_sensitive {
-            line.to_string()
+    if use_regex {
+        // Use regex matching
+        let pattern = if case_sensitive {
+            term.to_string()
         } else {
-            line.to_lowercase()
+            format!("(?i){}", term)
         };
 
-        if search_line.contains(&search_term) {
-            let context_before = if i > 0 {
-                Some(lines[i - 1].to_string())
+        let re = Regex::new(&pattern)
+            .map_err(|e| format!("Invalid regex pattern: {}", e))?;
+
+        for (i, line) in lines.iter().enumerate() {
+            if re.is_match(line) {
+                let context_before = if i > 0 {
+                    Some(lines[i - 1].to_string())
+                } else {
+                    None
+                };
+
+                matches.push(Match {
+                    line_number: i + 1,
+                    content: line.to_string(),
+                    context_before,
+                });
+            }
+        }
+    } else {
+        // Use simple substring matching
+        let search_term = if case_sensitive {
+            term.to_string()
+        } else {
+            term.to_lowercase()
+        };
+
+        for (i, line) in lines.iter().enumerate() {
+            let search_line = if case_sensitive {
+                line.to_string()
             } else {
-                None
+                line.to_lowercase()
             };
 
-            matches.push(Match {
-                line_number: i + 1, // 1-indexed for display
-                content: line.to_string(),
-                context_before,
-            });
+            if search_line.contains(&search_term) {
+                let context_before = if i > 0 {
+                    Some(lines[i - 1].to_string())
+                } else {
+                    None
+                };
+
+                matches.push(Match {
+                    line_number: i + 1,
+                    content: line.to_string(),
+                    context_before,
+                });
+            }
         }
     }
 
-    matches
+    Ok(matches)
 }
 
 fn show_selection_menu(

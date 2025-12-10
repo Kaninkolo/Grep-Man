@@ -7,7 +7,7 @@ _gman_completions() {
     _init_completion || return
 
     # Available flags
-    local flags="-c --case-sensitive -h --help -V --version"
+    local flags="-c --case-sensitive -r --regex -h --help -V --version"
 
     # Determine which positional argument we're completing
     local positional_count=0
@@ -15,7 +15,7 @@ _gman_completions() {
     local i
     for ((i = 1; i < cword; i++)); do
         case "${words[i]}" in
-            -c|--case-sensitive)
+            -c|--case-sensitive|-r|--regex)
                 # Flag without argument, skip
                 ;;
             -*)
