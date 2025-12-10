@@ -62,7 +62,7 @@ source ~/.zshrc
 ## Usage
 
 ```bash
-gman <program> [search-term] [OPTIONS]
+gman [OPTIONS] <program> [search-term]
 ```
 
 ### Examples
