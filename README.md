@@ -75,7 +75,7 @@ gman ls
 gman ls recursive
 
 # Case-sensitive search
-gman grep pattern -c
+gman -c grep pattern 
 
 # Search for flags
 gman tar extract
