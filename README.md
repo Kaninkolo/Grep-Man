@@ -78,7 +78,7 @@ gman ls recursive
 gman -c grep pattern
 
 # Regex pattern matching
-gman -r git "^[[:space:]]*-[a-z]$"      # Single-letter flags
+gman -r git "^[[:space:]]*-[a-z]"      # Single-letter flags
 gman -r ls "--\w+"                       # Long flags starting with --
 gman -r grep "PATTERN|REGEX"             # Multiple terms
 
