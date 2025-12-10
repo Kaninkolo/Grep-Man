@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -22,23 +22,15 @@ use std::process::{Command, Stdio};
 #[command(disable_help_flag = true)]
 #[command(disable_version_flag = true)]
 struct Args {
-    /// Show help information
-    #[arg(long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-
-    /// Show version information
-    #[arg(long, action = clap::ArgAction::Version)]
-    version: Option<bool>,
-
-    /// Case sensitive search
-    #[arg(short, long)]
+    /// Case sensitive search (must be specified before the program name)
+    #[arg(short, long, global = false)]
     case_sensitive: bool,
 
     /// Program to search the man page for
     program: String,
 
     /// Search term to find in the man page (if omitted, opens the man page directly)
-    #[arg(allow_hyphen_values = true)]
+    #[arg(allow_hyphen_values = true, trailing_var_arg = true)]
     term: Option<String>,
 }
 
@@ -50,6 +42,17 @@ struct Match {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Handle help/version manually if they appear before any positional args
+    let raw_args: Vec<String> = std::env::args().collect();
+    if raw_args.len() == 1 || (raw_args.len() == 2 && (raw_args[1] == "--help" || raw_args[1] == "-h")) {
+        Args::command().print_help()?;
+        return Ok(());
+    }
+    if raw_args.len() == 2 && (raw_args[1] == "--version" || raw_args[1] == "-V") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     let args = Args::parse();
 
     // If no search term provided, just open the man page

@@ -93,13 +93,19 @@ Once the search results appear:
 
 ### Options
 
-- `-c, --case-sensitive` - Enable case-sensitive search (default:
-  case-insensitive)
-- `--help` - Show help information
-- `--version` - Show version information
+- `-c, --case-sensitive` - Enable case-sensitive search (must be specified
+  before the program name)
+- `-h, --help` - Show help information (only works without a program name)
+- `-V, --version` - Show version information (only works without a program name)
 
-**Note:** Short flags `-h` and `-V` are not used for help/version, so you can
-search for them in man pages (e.g., `gman git -h` searches for `-h` flag).
+**Note:** Flags like `-h`, `--help`, etc. can be used as search terms! Once you
+specify a program name, everything after is treated as a search term:
+
+```bash
+gman --help          # Shows gman help
+gman git --help      # Searches for "--help" in git man page
+gman git -h          # Searches for "-h" in git man page
+```
 
 ## How It Works
 
